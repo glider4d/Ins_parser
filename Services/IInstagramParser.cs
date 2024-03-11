@@ -18,6 +18,9 @@ namespace InstagramPars.Services
         Task<string[]> GetHrefFromPage(string url);
         Task<string> GetHtmlFromPage(string url);
 
+        string GetFileCookies();
+        string GetCookies();
+
         Task<IPage?> Prepare();
     }
 }

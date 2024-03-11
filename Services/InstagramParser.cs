@@ -22,38 +22,54 @@ namespace InstagramPars.Services
 
 
         public async Task<bool> Login(IPage? page, bool saveCookies){
+            Console.WriteLine("Login in");
             bool result = true;
             if (isInitialize) return result;
             try
             {
                  await page!.GoToAsync("https://instagram.com/");
-  
+                Console.WriteLine("before Waite");
 
 
+            try{
+            await page.WaitForNavigationAsync(new NavigationOptions {Timeout = 2000 ,WaitUntil = new[] { WaitUntilNavigation.Networkidle2}});
+            } catch(Exception){Console.WriteLine("timeout");}
+            Console.WriteLine("after waite");
+// await page.WaitForSelectorAsync("input[name=\"username\"]");
                 var loginCheck = await page.QuerySelectorAsync("input[name=\"username\"]"); 
                 Console.WriteLine($"loginCheck = {loginCheck?.GetType()?.ToString()}");
 
                 if (loginCheck != null)
                 {
+                    Console.WriteLine("loginCheck != null");
                     if ( userName == string.Empty && password == string.Empty) throw new PrepareException("there aren't username and password");
+                    Console.WriteLine($"username = {userName}");
                     await page.WaitForSelectorAsync("input[name=\"username\"]");
+
                     await page.TypeAsync("input[name=\"username\"]", userName);//""
-                     await page.TypeAsync("input[name=\"password\"]", password);//""
+                    
+                    
+                    await page.TypeAsync("input[name=\"password\"]", password);//""
+                 
                     await page.ClickAsync("button[type=\"submit\"]");
 
-                     await page.WaitForNavigationAsync();
-                     var savebutton = page.QuerySelectorAllHandleAsync("button._acan");
+                    await page.WaitForNavigationAsync();
+                    var savebutton = page.QuerySelectorAllHandleAsync("button._acan");
+                    
                     if (savebutton != null)
                     {
                         await page.ClickAsync("button._acan");
                         await page.WaitForNavigationAsync();
 
-                    }
+                    }  
                     if (saveCookies) await SaveCookies(page);
                     
+                } else {
+                    Console.WriteLine("loginCheck == null");
                 }
-            } catch(Exception)
+            } catch(Exception ex)
             {
+                Console.WriteLine($"Login ex = {ex.Message}");
                 result = false;
             }
             isInitialize = result;
@@ -61,13 +77,19 @@ namespace InstagramPars.Services
         }
 
         public async Task FirstInit(string userName, string password){
-            this.userName = userName;
-            this.password = password;
-            using var browserFetcher = new BrowserFetcher();
-            await browserFetcher.DownloadAsync();
-            // isInitialize = true;
-            isInitialize = false;
-            await (await Prepare())?.CloseAsync()!;
+            try{
+                this.userName = userName;
+                this.password = password;
+                using var browserFetcher = new BrowserFetcher();
+                await browserFetcher.DownloadAsync();
+                // isInitialize = true;
+                isInitialize = false;
+                if (System.IO.File.Exists(fileName))
+                    System.IO.File.Delete(fileName);
+                await (await Prepare())?.CloseAsync()!;
+            } catch(Exception ex){
+                Console.WriteLine($"FirstInit ex = {ex.Message}");
+            }
         }
 
          
@@ -78,14 +100,18 @@ namespace InstagramPars.Services
                 // if (!isInitialize) throw new PrepareException("isn't initialize");
                 var dir = Directory.GetCurrentDirectory();
                 Console.WriteLine($"dir = {dir}");
+                Console.WriteLine("Prepare1");
                 using var browserFetcher = new BrowserFetcher();
-
+                Console.WriteLine("Prepare2");
                 await browserFetcher.DownloadAsync();
+                Console.WriteLine("Prepare3");
                 var browser = await Puppeteer.LaunchAsync(new LaunchOptions
                 {
                     Headless = true
                 });
+                Console.WriteLine("Prepare4");
                 var page = await browser.NewPageAsync();
+                Console.WriteLine("Prepare5");
                 await SetCookies(page);
                 await page.GoToAsync("https://instagram.com/");
             
@@ -147,24 +173,31 @@ namespace InstagramPars.Services
         }
 
         public async Task<Dictionary<string, string>> GetImgFromPage(string url){
+            Console.WriteLine("GetImgFromPage in");
             try
             {
+                Console.WriteLine("GetImgFromPage 1");
                 var page = await Prepare();
-                
+                Console.WriteLine("GetImgFromPage 2");
                 await page!.GoToAsync(url);
+                Console.WriteLine("GetImgFromPage 3");
                 await page.WaitForSelectorAsync(".x5yr21d");//, ".xu96u03", ".x10l6tqk", ".x13vifvy", ".x87ps6o", ".xh8yej3");
-            
+                Console.WriteLine("GetImgFromPage 4");
                 var resultSrc = await page.EvaluateExpressionAsync<string[]>("Array.from(document.querySelectorAll('img')).map(a => a.src);");
+                Console.WriteLine("GetImgFromPage 5");
                 var resultAlt = await page.EvaluateExpressionAsync<string[]>("Array.from(document.querySelectorAll('img')).map(a => a.alt);");
+                Console.WriteLine("GetImgFromPage 6");
                 var dictionary = resultSrc.Zip(resultAlt, (s, i) => new { s, i })
                                           .ToDictionary(item => item.s, item => item.i);
-
+                Console.WriteLine("GetImgFromPage 7");
                 await page.CloseAsync();
+                Console.WriteLine("GetImgFromPage out");
                 return dictionary;
        
 
             } catch(Exception ex)
             {
+                Console.WriteLine("GetImgFromPage exception");
                 throw new ContentException("GetImgFrompage exception", ex);
             }
         }
@@ -193,6 +226,22 @@ namespace InstagramPars.Services
             } catch(Exception ex){
                 throw new ContentException("GetHtmlFromPage", ex);
             }
+        }
+
+        public string GetFileCookies(){
+            string result = string.Empty;
+            if (System.IO.File.Exists(fileName)){
+                var dir = System.IO.Directory.GetCurrentDirectory();
+                result = System.IO.Path.Combine(dir, fileName);
+            }
+            return result;
+        }
+        public string GetCookies(){
+            string result = string.Empty;
+            if (System.IO.File.Exists(fileName)){
+                result = System.IO.File.ReadAllText(fileName);
+            }
+            return result;
         }
     }
 }
