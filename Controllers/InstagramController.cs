@@ -83,6 +83,19 @@ namespace InstagramParser.Controllers
         
             return Ok(response.Content);
         }
+        [HttpGet(nameof(Check))]
+        public async Task<IActionResult> Check(){
+            using var browserFetcher = new BrowserFetcher();
+            await browserFetcher.DownloadAsync();            
+            var browser = await Puppeteer.LaunchAsync(new LaunchOptions
+            {
+                Headless = true
+            });
+            
+            var page = await browser.NewPageAsync();
+            await page.GoToAsync("https://github.com/");
+            return Ok(await page.GetContentAsync());
+        }
        
     }
 }
