@@ -12,7 +12,7 @@ namespace InstagramParser.Controllers
     [ApiController]
     public class InstagramController : ControllerBase
     {
- 
+        
 
         private readonly ILogger<InstagramController> _logger;
         private readonly IInstagramParser _parser;
@@ -42,6 +42,7 @@ namespace InstagramParser.Controllers
         [HttpGet(nameof(GetHtmlFromUrl))]
         public async Task<IActionResult> GetHtmlFromUrl(string url){
             try{
+            
                 return Ok(await _parser.GetHtmlFromPage(url));
             } catch(Exception ex){
                 return BadRequest(ex);
@@ -53,8 +54,10 @@ namespace InstagramParser.Controllers
         {
 
             try{
+                Console.WriteLine("GetImgFromUrl before ok");
                 return Ok(await _parser.GetImgFromPage(url));
             } catch(Exception ex){
+                Console.WriteLine("GetImgFromUrl exception");
                 return BadRequest(ex);
             }
         }  
@@ -66,6 +69,19 @@ namespace InstagramParser.Controllers
             } catch(Exception ex){
                 return BadRequest(ex);
             }
+        }
+        [HttpGet(nameof(GetCookies))]
+        public IActionResult GetCookies() => Ok(_parser.GetCookies());
+        
+        [HttpGet(nameof(GetFileCookies))]
+        public IActionResult GetFileCookies() => Ok(_parser.GetFileCookies());
+
+        [HttpGet(nameof(GetHttp))]
+        public async Task<IActionResult> GetHttp(){
+            HttpClient httpClient = new HttpClient();
+            var response = await httpClient.GetAsync("https://yandex.ru");
+        
+            return Ok(response.Content);
         }
        
     }
