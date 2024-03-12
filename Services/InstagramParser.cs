@@ -107,7 +107,9 @@ namespace InstagramPars.Services
                 Console.WriteLine("Prepare3");
                 var browser = await Puppeteer.LaunchAsync(new LaunchOptions
                 {
-                    Headless = true
+                    Headless = true,
+                    args = "--no-sandbox"
+
                 });
                 Console.WriteLine("Prepare4");
                 var page = await browser.NewPageAsync();
