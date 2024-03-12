@@ -1,5 +1,5 @@
 using Newtonsoft.Json;
-using PuppeteerSharp; 
+using PuppeteerSharp;
 
 namespace InstagramPars.Services
 {
@@ -11,7 +11,7 @@ namespace InstagramPars.Services
         Task<bool> SaveCookies(IPage? page);
 
         Task<CookieParam[]?> LoadCookies();
-        
+
         Task SetCookies(IPage? page);
 
         Task<Dictionary<string, string>> GetImgFromPage(string url);
@@ -22,5 +22,14 @@ namespace InstagramPars.Services
         string GetCookies();
 
         Task<IPage?> Prepare();
+        Task DownloadChrome();
+        void Bash(string cmd);
+
+        Task<LaunchOptions> InitDownloadOptions();
+
+        Task<string> Check();
+        Task<string> GetHtmlFromUrl(string url);
+        Task<string> GetHtmlFromUrlWithWaitTag(string url, string waitTag);
+
     }
 }

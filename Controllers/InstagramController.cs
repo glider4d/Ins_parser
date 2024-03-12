@@ -2,7 +2,7 @@
 using InstagramPars.Services;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
-using PuppeteerSharp; 
+using PuppeteerSharp;
 
 
 
@@ -12,7 +12,7 @@ namespace InstagramParser.Controllers
     [ApiController]
     public class InstagramController : ControllerBase
     {
-        
+
 
         private readonly ILogger<InstagramController> _logger;
         private readonly IInstagramParser _parser;
@@ -23,79 +23,100 @@ namespace InstagramParser.Controllers
         }
 
         [HttpGet(nameof(login))]
-        public  async Task<IActionResult> login(IPage? page, bool saveCookies)
+        public async Task<IActionResult> login(IPage? page, bool saveCookies)
         {
 
             bool result = await _parser.Login(page, saveCookies);
-            return result? Ok (result) : BadRequest(result);
+            return result ? Ok(result) : BadRequest(result);
         }
- 
+
         [HttpGet(nameof(FirstInit))]
-        public async Task<IActionResult> FirstInit(string username, string password){
-            try{
+        public async Task<IActionResult> FirstInit(string username, string password)
+        {
+            try
+            {
                 await _parser.FirstInit(username, password);
                 return Ok("Init is fine");
-            } catch(Exception ex){
+            }
+            catch (Exception ex)
+            {
                 return BadRequest(ex);
             }
         }
         [HttpGet(nameof(GetHtmlFromUrl))]
-        public async Task<IActionResult> GetHtmlFromUrl(string url){
-            try{
-            
+        public async Task<IActionResult> GetHtmlFromUrl(string url)
+        {
+            try
+            {
+
                 return Ok(await _parser.GetHtmlFromPage(url));
-            } catch(Exception ex){
+            }
+            catch (Exception ex)
+            {
                 return BadRequest(ex);
             }
         }
-         
-        [HttpGet(  nameof(GetImgFromUrl))]
-        public async Task<IActionResult> GetImgFromUrl(string url) 
+
+        [HttpGet(nameof(GetImgFromUrl))]
+        public async Task<IActionResult> GetImgFromUrl(string url)
         {
 
-            try{
+            try
+            {
                 Console.WriteLine("GetImgFromUrl before ok");
                 return Ok(await _parser.GetImgFromPage(url));
-            } catch(Exception ex){
+            }
+            catch (Exception ex)
+            {
                 Console.WriteLine("GetImgFromUrl exception");
                 return BadRequest(ex);
             }
-        }  
-        [HttpGet( nameof(GetHrefFromUrl))]
+        }
+        [HttpGet(nameof(GetHrefFromUrl))]
         public async Task<IActionResult> GetHrefFromUrl(string url)
         {
-            try {
+            try
+            {
                 return Ok(await _parser.GetHrefFromPage(url));
-            } catch(Exception ex){
+            }
+            catch (Exception ex)
+            {
                 return BadRequest(ex);
             }
         }
         [HttpGet(nameof(GetCookies))]
         public IActionResult GetCookies() => Ok(_parser.GetCookies());
-        
+
         [HttpGet(nameof(GetFileCookies))]
         public IActionResult GetFileCookies() => Ok(_parser.GetFileCookies());
 
         [HttpGet(nameof(GetHttp))]
-        public async Task<IActionResult> GetHttp(){
+        public async Task<IActionResult> GetHttp()
+        {
             HttpClient httpClient = new HttpClient();
             var response = await httpClient.GetAsync("https://yandex.ru");
-        
+
             return Ok(response.Content);
         }
         [HttpGet(nameof(Check))]
-        public async Task<IActionResult> Check(){
+        public async Task<IActionResult> Check() => Ok(await _parser.Check());
+
+        [HttpGet(nameof(GetContent))]
+        public async Task<IActionResult> GetContent(string url) => Ok(await _parser.GetHtmlFromUrl(url));
+
+        [HttpGet(nameof(GetContentWithTag))]
+        public async Task<IActionResult> GetContentWithTag(string url, string waitTag) => Ok(await _parser.GetHtmlFromUrlWithWaitTag(url, waitTag));
+
+        /*{
             using var browserFetcher = new BrowserFetcher();
             await browserFetcher.DownloadAsync();            
             var browser = await Puppeteer.LaunchAsync(new LaunchOptions
             {
                 Headless = true
-            });
-            
+            });            
             var page = await browser.NewPageAsync();
             await page.GoToAsync("https://github.com/");
             return Ok(await page.GetContentAsync());
-        }
-       
+        }*/
     }
 }
