@@ -141,6 +141,7 @@ namespace InstagramPars.Services
 
         public async Task FirstInit(string userName, string password)
         {
+            Console.WriteLine("FirstInit in");
             try
             {
                 this.userName = userName;
@@ -157,6 +158,7 @@ namespace InstagramPars.Services
             {
                 Console.WriteLine($"FirstInit ex = {ex.Message}");
             }
+            Console.WriteLine("FirstInit out");
         }
 
 
@@ -391,7 +393,7 @@ namespace InstagramPars.Services
         public string GetFileCookies()
         {
             string result = string.Empty;
-            if (System.IO.File.Exists(fileName))
+            // if (System.IO.File.Exists(fileName))
             {
                 var dir = System.IO.Directory.GetCurrentDirectory();
                 result = System.IO.Path.Combine(dir, fileName);
