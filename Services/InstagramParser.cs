@@ -187,17 +187,21 @@ namespace InstagramPars.Services
 
                 try
                 {
-                    await page.GoToAsync(url, new NavigationOptions { Timeout = 3000, WaitUntil = new[] { WaitUntilNavigation.Networkidle2 } });
+                    Console.WriteLine("before");
+                    await page.GoToAsync(url);
+                    Console.WriteLine("after");
+                    // await page.GoToAsync(url, new NavigationOptions { Timeout = 3000, WaitUntil = new[] { WaitUntilNavigation.Networkidle2 } });
                     //                    await page.WaitForNavigationAsync(new NavigationOptions { Timeout = 2000, WaitUntil = new[] { WaitUntilNavigation.Networkidle2 } });
                 }
-                catch (Exception) { Console.WriteLine("timeout"); }
+                catch (Exception e) { Console.WriteLine($"timeout: {e.Message}"); }
+                Console.WriteLine("after exception check");
                 var result = await page.GetContentAsync();
                 await page.CloseAsync();
                 return result;
             }
             catch (Exception ex)
             {
-                return $"GetHtmlFromUrl {url}";
+                return $"GetHtmlFromUrl {url} {ex.Message}";
             }
         }
 
@@ -270,6 +274,7 @@ namespace InstagramPars.Services
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Prepare: {ex.Message}");
                 throw new PrepareException("Prepare error!", ex);
             }
         }
@@ -344,7 +349,7 @@ namespace InstagramPars.Services
             }
             catch (Exception ex)
             {
-                Console.WriteLine("GetImgFromPage exception");
+                Console.WriteLine($"GetImgFromPage exception {ex.Message}");
                 throw new ContentException("GetImgFrompage exception", ex);
             }
         }

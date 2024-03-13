@@ -68,7 +68,7 @@ namespace InstagramParser.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine("GetImgFromUrl exception");
+                Console.WriteLine($"GetImgFromUrl exception {ex.Message}");
                 return BadRequest(ex);
             }
         }
