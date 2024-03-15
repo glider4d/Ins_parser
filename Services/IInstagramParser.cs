@@ -21,7 +21,7 @@ namespace InstagramPars.Services
         string GetFileCookies();
         string GetCookies();
 
-        Task<IPage?> Prepare();
+        Task<Tuple<IPage?, IBrowser?>> Prepare();
         Task DownloadChrome();
         void Bash(string cmd);
 

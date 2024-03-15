@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Newtonsoft.Json;
 using PuppeteerSharp;
 
@@ -152,7 +153,13 @@ namespace InstagramPars.Services
                 isInitialize = false;
                 if (System.IO.File.Exists(fileName))
                     System.IO.File.Delete(fileName);
-                await (await Prepare())?.CloseAsync()!;
+                var page_browser = await Prepare();
+                if (page_browser.Item1 != null)
+                    await page_browser.Item1?.CloseAsync()!;
+                if (page_browser.Item2 != null)
+                   await page_browser.Item2?.CloseAsync()!;
+//                await (await Prepare()).Item1?.CloseAsync();
+//                await (await Prepare()).Item2?.CloseAsync()!;
             }
             catch (Exception ex)
             {
@@ -164,18 +171,21 @@ namespace InstagramPars.Services
 
         public async Task<string> Check()
         {
+            IBrowser browser = null;
             try
             {
-                var browser = await Puppeteer.LaunchAsync(await InitDownloadOptions());
+                browser = await Puppeteer.LaunchAsync(await InitDownloadOptions());
                 var page = await browser.NewPageAsync();
                 await page.GoToAsync("https://ipinfo.io/ip");
 
                 var result = await page.GetContentAsync();
                 await page.CloseAsync();
+                await browser.CloseAsync();
                 return result;
             }
             catch (Exception ex)
             {
+                await browser?.CloseAsync()!;
                 return $"Check exception: {ex.Message}";
             }
         }
@@ -184,6 +194,7 @@ namespace InstagramPars.Services
         {
             try
             {
+//                var cookies = this.GetCookies();
                 var browser = await Puppeteer.LaunchAsync(await InitDownloadOptions());
                 var page = await browser.NewPageAsync();
 
@@ -199,6 +210,7 @@ namespace InstagramPars.Services
                 Console.WriteLine("after exception check");
                 var result = await page.GetContentAsync();
                 await page.CloseAsync();
+                await browser.CloseAsync();
                 return result;
             }
             catch (Exception ex)
@@ -215,8 +227,10 @@ namespace InstagramPars.Services
                 var page = await browser.NewPageAsync();
                 await page.GoToAsync(url);
                 await page.WaitForSelectorAsync(waitTag);
+                var content = await page.GetContentAsync();
                 await page.CloseAsync();
-                return await page.GetContentAsync();
+                await browser.CloseAsync();
+                return content;
             }
             catch (Exception e)
             {
@@ -231,15 +245,16 @@ namespace InstagramPars.Services
         // // await page.WaitForSelectorAsync("input[name=\"username\"]");
         //                 var loginCheck = await page.QuerySelectorAsync("input[name=\"username\"]"); 
 
-        public async Task<IPage?> Prepare()
+        public async Task<(IPage?,IBrowser?)> Prepare()
         {
+            IBrowser browser;
             try
             {
                 // if (!isInitialize) throw new PrepareException("isn't initialize");
                 var dir = Directory.GetCurrentDirectory();
                 Console.WriteLine($"dir = {dir}");
                 Console.WriteLine("Prepare1");
-                var browser = await Puppeteer.LaunchAsync(await InitDownloadOptions());
+                browser = await Puppeteer.LaunchAsync(await InitDownloadOptions());
                 // using var browserFetcher = new BrowserFetcher();
                 // Console.WriteLine("Prepare2");
                 // await browserFetcher.DownloadAsync();
@@ -271,7 +286,9 @@ namespace InstagramPars.Services
                     await page.WaitForSelectorAsync("button._a9_1");
                     await page.ClickAsync("button._a9_1");
                 }
-                return page;
+                return (page, browser);
+//                return Tuple<IPage?,IBrowser?>(page, browser);
+  //              return page;
 
             }
             catch (Exception ex)
@@ -327,30 +344,36 @@ namespace InstagramPars.Services
         public async Task<Dictionary<string, string>> GetImgFromPage(string url)
         {
             Console.WriteLine("GetImgFromPage in");
+            (IPage?, IBrowser?) page_browser;
             try
             {
                 Console.WriteLine("GetImgFromPage 1");
-                var page = await Prepare();
+                page_browser = await Prepare();
+//                var page = await Prepare();
                 Console.WriteLine("GetImgFromPage 2");
-                await page!.GoToAsync(url);
+                await page_browser.Item1!.GoToAsync(url);
                 Console.WriteLine("GetImgFromPage 3");
-                await page.WaitForSelectorAsync(".x5yr21d");//, ".xu96u03", ".x10l6tqk", ".x13vifvy", ".x87ps6o", ".xh8yej3");
+                await page_browser.Item1.WaitForSelectorAsync(".x5yr21d");//, ".xu96u03", ".x10l6tqk", ".x13vifvy", ".x87ps6o", ".xh8yej3");
                 Console.WriteLine("GetImgFromPage 4");
-                var resultSrc = await page.EvaluateExpressionAsync<string[]>("Array.from(document.querySelectorAll('img')).map(a => a.src);");
+                var resultSrc = await page_browser.Item1.EvaluateExpressionAsync<string[]>("Array.from(document.querySelectorAll('img')).map(a => a.src);");
                 Console.WriteLine("GetImgFromPage 5");
-                var resultAlt = await page.EvaluateExpressionAsync<string[]>("Array.from(document.querySelectorAll('img')).map(a => a.alt);");
+                var resultAlt = await page_browser.Item1.EvaluateExpressionAsync<string[]>("Array.from(document.querySelectorAll('img')).map(a => a.alt);");
                 Console.WriteLine("GetImgFromPage 6");
                 var dictionary = resultSrc.Zip(resultAlt, (s, i) => new { s, i })
                                           .ToDictionary(item => item.s, item => item.i);
                 Console.WriteLine("GetImgFromPage 7");
-                await page.CloseAsync();
+                await this.SaveCookies(page_browser.Item1);
+
+                await page_browser.Item1.CloseAsync();
                 Console.WriteLine("GetImgFromPage out");
+                if(page_browser.Item2 != null)
+                    await page_browser.Item2.CloseAsync();
                 return dictionary;
 
 
             }
             catch (Exception ex)
-            {
+            { 
                 Console.WriteLine($"GetImgFromPage exception {ex.Message}");
                 throw new ContentException("GetImgFrompage exception", ex);
             }
@@ -359,12 +382,16 @@ namespace InstagramPars.Services
         {
             try
             {
-                var page = await Prepare();
-                await page!.GoToAsync(url);
-                await page.WaitForSelectorAsync(".x5yr21d");//, ".xu96u03", ".x10l6tqk", ".x13vifvy", ".x87ps6o", ".xh8yej3");
+                var page_browser = await Prepare();
+                await page_browser.Item1!.GoToAsync(url);
+                await page_browser.Item1.WaitForSelectorAsync(".x5yr21d");//, ".xu96u03", ".x10l6tqk", ".x13vifvy", ".x87ps6o", ".xh8yej3");
 
-                string[] a_href = await page.EvaluateExpressionAsync<string[]>("Array.from(document.querySelectorAll('a')).map(a => a.href);");
-                await page.CloseAsync();
+                string[] a_href = await page_browser.Item1.EvaluateExpressionAsync<string[]>("Array.from(document.querySelectorAll('a')).map(a => a.href);");
+                await this.SaveCookies(page_browser.Item1);
+
+                await page_browser.Item1.CloseAsync();
+                if (page_browser.Item2 != null)
+                    await page_browser.Item2?.CloseAsync()!;
                 return a_href;
             }
             catch (Exception ex)
@@ -376,12 +403,15 @@ namespace InstagramPars.Services
         {
             try
             {
-                var page = await Prepare();
-                await page!.GoToAsync(url);
+                var page_broser = await Prepare();
+                await page_broser.Item1!.GoToAsync(url);
 
-                await page.WaitForSelectorAsync(".x5yr21d");//, ".xu96u03", ".x10l6tqk", ".x13vifvy", ".x87ps6o", ".xh8yej3");
-                string result = await page.GetContentAsync();
-                await page.CloseAsync();
+                await page_broser.Item1.WaitForSelectorAsync(".x5yr21d");//, ".xu96u03", ".x10l6tqk", ".x13vifvy", ".x87ps6o", ".xh8yej3");
+                string result = await page_broser.Item1.GetContentAsync();
+                await this.SaveCookies(page_broser.Item1);
+                await page_broser.Item1.CloseAsync();
+                if (page_broser.Item2 != null)
+                    await page_broser.Item2.CloseAsync();
                 return result;
             }
             catch (Exception ex)
