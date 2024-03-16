@@ -21,7 +21,7 @@ namespace InstagramParser.Controllers
             _logger = logger;
             _parser = parser;
         }
-
+        /*
         [HttpGet(nameof(login))]
         public async Task<IActionResult> login(IPage? page, bool saveCookies)
         {
@@ -29,7 +29,7 @@ namespace InstagramParser.Controllers
             bool result = await _parser.Login(page, saveCookies);
             return result ? Ok(result) : BadRequest(result);
         }
-
+        */
         [HttpGet(nameof(FirstInit))]
         public async Task<IActionResult> FirstInit(string username, string password)
         {
@@ -106,7 +106,10 @@ namespace InstagramParser.Controllers
 
         [HttpGet(nameof(GetContentWithTag))]
         public async Task<IActionResult> GetContentWithTag(string url, string waitTag) => Ok(await _parser.GetHtmlFromUrlWithWaitTag(url, waitTag));
-
+        [HttpGet(nameof(GetResponseData))]
+        public async Task<IActionResult> GetResponseData(string url) => Ok(await _parser.GetResponseData(url));
+        [HttpGet(nameof(GetResponseInstagramData))]
+        public async Task<IActionResult> GetResponseInstagramData(string url) => Ok(await _parser.GetResponseInstagramData(url));
         /*{
             using var browserFetcher = new BrowserFetcher();
             await browserFetcher.DownloadAsync();            

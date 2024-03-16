@@ -17,7 +17,8 @@ namespace InstagramPars.Services
         Task<Dictionary<string, string>> GetImgFromPage(string url);
         Task<string[]> GetHrefFromPage(string url);
         Task<string> GetHtmlFromPage(string url);
-
+        Task<Dictionary<string, string>> GetResponseInstagramData(string url);
+        Task<Dictionary<string, string>> GetResponseData(string url);
         string GetFileCookies();
         string GetCookies();
         Task<(IPage?, IBrowser?)> Prepare();

@@ -1,5 +1,7 @@
+using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using Newtonsoft.Json;
 using PuppeteerSharp;
 
@@ -42,12 +44,15 @@ namespace InstagramPars.Services
 
                 try
                 {
-                    await page.WaitForNavigationAsync(new NavigationOptions { Timeout = 2000, WaitUntil = new[] { WaitUntilNavigation.Networkidle2 } });
+                    if (page != null)
+                    {
+                        await page?.WaitForNavigationAsync(new NavigationOptions { Timeout = 2000, WaitUntil = new[] { WaitUntilNavigation.Networkidle2 } })!;
+                    }
                 }
                 catch (Exception) { Console.WriteLine("timeout"); }
                 Console.WriteLine("after waite");
                 // await page.WaitForSelectorAsync("input[name=\"username\"]");
-                var loginCheck = await page.QuerySelectorAsync("input[name=\"username\"]");
+                var loginCheck = await page?.QuerySelectorAsync("input[name=\"username\"]")!;
                 Console.WriteLine($"loginCheck = {loginCheck?.GetType()?.ToString()}");
 
                 if (loginCheck != null)
@@ -171,7 +176,7 @@ namespace InstagramPars.Services
 
         public async Task<string> Check()
         {
-            IBrowser browser = null;
+            IBrowser? browser = null;
             try
             {
                 browser = await Puppeteer.LaunchAsync(await InitDownloadOptions());
@@ -189,11 +194,65 @@ namespace InstagramPars.Services
                 return $"Check exception: {ex.Message}";
             }
         }
+        public async Task<Dictionary<string, string>> GetResponseData(string url)
+        {
+            IBrowser? browser = null;
+            IPage? page = null;
+            Dictionary<string, string> data = new();
+            try
+            {
+                browser = await Puppeteer.LaunchAsync(await InitDownloadOptions());
+                page = await browser.NewPageAsync();
+                
+                page.Response += async (sender, e) =>
+                {
 
+                    var url = e.Response.Url;
+
+                    try
+                    {
+                        var responseText = await e.Response.TextAsync();
+                        if (responseText != null)
+                        {
+                            data.Add(url, await e.Response.TextAsync());
+                        }
+                    } catch(Exception ex) { Console.WriteLine($"ex {ex.Message}"); }
+                };
+                /*
+                page.Response += async (sender, e) =>
+                {
+
+                    var url = e.Response.Url;
+
+                    if (url == "http://localhost:5235/api/Test/GetAjax?test=load")
+                    {
+                        Console.WriteLine("response");
+                        var textAnswer = await e.Response.TextAsync();
+                        Console.WriteLine(textAnswer);
+                    }
+                };*/
+
+                try
+                {
+                    await page.GoToAsync(url, new NavigationOptions { Timeout = 16000, WaitUntil = new[] { WaitUntilNavigation.Networkidle0 } });
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"{ex.Message}");
+                }
+            }
+            catch (Exception e) { Console.WriteLine($"timeout: {e.Message}"); }
+            if (page != null)   
+                await page.CloseAsync();
+            if (browser != null)
+                await browser.CloseAsync();
+            return data;
+        }   
         public async Task<string> GetHtmlFromUrl(string url)
         {
             try
             {
+
 //                var cookies = this.GetCookies();
                 var browser = await Puppeteer.LaunchAsync(await InitDownloadOptions());
                 var page = await browser.NewPageAsync();
@@ -201,7 +260,45 @@ namespace InstagramPars.Services
                 try
                 {
                     Console.WriteLine("before");
-                    await page.GoToAsync(url);
+//                    await page.SetRequestInterceptionAsync(true);
+                    page.Response += async (sender, e) =>
+                    {
+
+                        try
+                        {
+                            var url = e.Response.Url;
+
+                            if (url == "http://localhost:5235/api/Test/GetAjax?test=load")
+                            {
+                                Console.WriteLine("response");
+                                var textAnswer = await e.Response.TextAsync();
+                                Console.WriteLine(textAnswer);
+                            }
+                        } catch(Exception ex)
+                        {
+                            Console.WriteLine($"response ex = {ex.Message}");
+                        }
+
+
+                    };
+                    /*
+                    page.Request += async (sender, e) => 
+                    {
+                        
+                        Console.WriteLine($"Request: {e.Request.Method} {e.Request.Url}");
+ 
+                    };*/
+ 
+                    try
+                    {
+                        await page.GoToAsync(url, new NavigationOptions { Timeout = 16000, WaitUntil = new[] { WaitUntilNavigation.Networkidle0 } });
+                    } catch (Exception ex)
+                    {
+                        Console.WriteLine($"{ex.Message}");
+                    }
+//                    await page.WaitForNavigationAsync(new NavigationOptions { WaitUntil = new[] { WaitUntilNavigation.Networkidle0 } });
+
+                    //page.Response
                     Console.WriteLine("after");
                     // await page.GoToAsync(url, new NavigationOptions { Timeout = 3000, WaitUntil = new[] { WaitUntilNavigation.Networkidle2 } });
                     //                    await page.WaitForNavigationAsync(new NavigationOptions { Timeout = 2000, WaitUntil = new[] { WaitUntilNavigation.Networkidle2 } });
@@ -225,7 +322,8 @@ namespace InstagramPars.Services
             {
                 var browser = await Puppeteer.LaunchAsync(await InitDownloadOptions());
                 var page = await browser.NewPageAsync();
-                await page.GoToAsync(url);
+
+                await page.GoToAsync(url, new NavigationOptions { WaitUntil = new[] { WaitUntilNavigation.Networkidle2 } });
                 await page.WaitForSelectorAsync(waitTag);
                 var content = await page.GetContentAsync();
                 await page.CloseAsync();
@@ -234,7 +332,7 @@ namespace InstagramPars.Services
             }
             catch (Exception e)
             {
-                return $"GetHtmlFromUrlWithWaitTag {url}";
+                return $"GetHtmlFromUrlWithWaitTag {url}, error: {e.Message}";
 
             }
         }
@@ -268,7 +366,8 @@ namespace InstagramPars.Services
                 Console.WriteLine("Prepare5");
                 await SetCookies(page);
                 Console.WriteLine("Prepare6");
-                await page.GoToAsync("https://instagram.com/");
+                await page.GoToAsync("https://instagram.com/", new NavigationOptions { WaitUntil = new[] { WaitUntilNavigation.Networkidle2 } });
+//                await page.GoToAsync("https://instagram.com/");
                 Console.WriteLine("Prepare7");
 
 
@@ -341,6 +440,74 @@ namespace InstagramPars.Services
 
         }
 
+        public async Task<Dictionary<string, string>> GetResponseInstagramData(string url)
+        {
+            (IPage?, IBrowser?) page_browser;
+            Dictionary<string, string> data = new Dictionary<string, string>();
+            try
+            {
+                page_browser = await Prepare();
+                if (page_browser.Item1 != null)
+                {
+
+
+
+                    page_browser.Item1.Response += async (sender, e) =>
+                    {
+                        try
+                        {
+                            var url = e.Response.Url;
+
+
+                            var responseText = await e.Response.TextAsync();
+                            if (responseText != null)
+                            {
+                                data.Add(url, await e.Response.TextAsync());
+                            }
+                            if (url == "http://localhost:5235/api/Test/GetAjax?test=load")
+                            {
+                                Console.WriteLine("response");
+                                var textAnswer = await e.Response.TextAsync();
+                                Console.WriteLine(textAnswer);
+                            }
+                        } catch (Exception ex)
+                        {
+                            Console.WriteLine($"ex {ex.Message}");
+                        }
+                    };
+                    /*
+                    page_browser.Item1.Request +=  (sender, e) =>
+                    {
+
+                        Console.WriteLine($"Request: {e.Request.Method} {e.Request.Url}");
+ 
+                    };*/
+
+
+
+
+                    await page_browser.Item1?.GoToAsync(url, new NavigationOptions { WaitUntil = new[] { WaitUntilNavigation.Networkidle2 } })!;
+                    await page_browser.Item1.WaitForSelectorAsync(".x5yr21d");
+                    await this.SaveCookies(page_browser.Item1);
+                    await page_browser.Item1.CloseAsync();
+                    if (page_browser.Item2 != null) {
+                        await page_browser.Item2.CloseAsync();
+                    }
+
+                    return data;
+                }
+
+                if (page_browser.Item2 != null)
+                    page_browser.Item2?.CloseAsync();
+                throw new ContentException("GetResponseData exception");
+
+            }
+            catch (Exception ex)
+            {
+                throw new ContentException("GetResponseData exception", ex);
+            }
+        }
+
         public async Task<Dictionary<string, string>> GetImgFromPage(string url)
         {
             Console.WriteLine("GetImgFromPage in");
@@ -349,27 +516,34 @@ namespace InstagramPars.Services
             {
                 Console.WriteLine("GetImgFromPage 1");
                 page_browser = await Prepare();
-//                var page = await Prepare();
+                //                var page = await Prepare();
                 Console.WriteLine("GetImgFromPage 2");
-                await page_browser.Item1!.GoToAsync(url);
-                Console.WriteLine("GetImgFromPage 3");
-                await page_browser.Item1.WaitForSelectorAsync(".x5yr21d");//, ".xu96u03", ".x10l6tqk", ".x13vifvy", ".x87ps6o", ".xh8yej3");
-                Console.WriteLine("GetImgFromPage 4");
-                var resultSrc = await page_browser.Item1.EvaluateExpressionAsync<string[]>("Array.from(document.querySelectorAll('img')).map(a => a.src);");
-                Console.WriteLine("GetImgFromPage 5");
-                var resultAlt = await page_browser.Item1.EvaluateExpressionAsync<string[]>("Array.from(document.querySelectorAll('img')).map(a => a.alt);");
-                Console.WriteLine("GetImgFromPage 6");
-                var dictionary = resultSrc.Zip(resultAlt, (s, i) => new { s, i })
-                                          .ToDictionary(item => item.s, item => item.i);
-                Console.WriteLine("GetImgFromPage 7");
-                await this.SaveCookies(page_browser.Item1);
+                if (page_browser.Item1 != null)
+                {
+                    await page_browser.Item1?.GoToAsync(url, new NavigationOptions { WaitUntil = new[] { WaitUntilNavigation.Networkidle2 } })!;
+                    //                await page_browser.Item1!.GoToAsync(url);
+                    Console.WriteLine("GetImgFromPage 3");
+                    await page_browser.Item1.WaitForSelectorAsync(".x5yr21d");//, ".xu96u03", ".x10l6tqk", ".x13vifvy", ".x87ps6o", ".xh8yej3");
+                    Console.WriteLine("GetImgFromPage 4");
+                    var resultSrc = await page_browser.Item1.EvaluateExpressionAsync<string[]>("Array.from(document.querySelectorAll('img')).map(a => a.src);");
+                    Console.WriteLine("GetImgFromPage 5");
+                    var resultAlt = await page_browser.Item1.EvaluateExpressionAsync<string[]>("Array.from(document.querySelectorAll('img')).map(a => a.alt);");
+                    Console.WriteLine("GetImgFromPage 6");
+                    var dictionary = resultSrc.Zip(resultAlt, (s, i) => new { s, i })
+                                              .ToDictionary(item => item.s, item => item.i);
+                    Console.WriteLine("GetImgFromPage 7");
+                    await this.SaveCookies(page_browser.Item1);
 
-                await page_browser.Item1.CloseAsync();
-                Console.WriteLine("GetImgFromPage out");
-                if(page_browser.Item2 != null)
-                    await page_browser.Item2.CloseAsync();
-                return dictionary;
+                    await page_browser.Item1.CloseAsync();
+                    Console.WriteLine("GetImgFromPage out");
+                    if (page_browser.Item2 != null)
+                        await page_browser.Item2.CloseAsync();
+                    return dictionary;
+                }
 
+                if (page_browser.Item2 != null)
+                    page_browser.Item2?.CloseAsync();
+                throw new ContentException("GetImgFrompage exception");
 
             }
             catch (Exception ex)
@@ -383,16 +557,21 @@ namespace InstagramPars.Services
             try
             {
                 var page_browser = await Prepare();
-                await page_browser.Item1!.GoToAsync(url);
-                await page_browser.Item1.WaitForSelectorAsync(".x5yr21d");//, ".xu96u03", ".x10l6tqk", ".x13vifvy", ".x87ps6o", ".xh8yej3");
+                //                await page_browser.Item1!.GoToAsync(url);
+                if (page_browser.Item1 != null)
+                {
+                    await page_browser.Item1?.GoToAsync(url, new NavigationOptions { WaitUntil = new[] { WaitUntilNavigation.Networkidle2 } })!;
+                    await page_browser.Item1?.WaitForSelectorAsync(".x5yr21d")!;//, ".xu96u03", ".x10l6tqk", ".x13vifvy", ".x87ps6o", ".xh8yej3");
 
-                string[] a_href = await page_browser.Item1.EvaluateExpressionAsync<string[]>("Array.from(document.querySelectorAll('a')).map(a => a.href);");
-                await this.SaveCookies(page_browser.Item1);
+                    string[] a_href = await page_browser.Item1.EvaluateExpressionAsync<string[]>("Array.from(document.querySelectorAll('a')).map(a => a.href);");
+                    await this.SaveCookies(page_browser.Item1);
 
-                await page_browser.Item1.CloseAsync();
-                if (page_browser.Item2 != null)
-                    await page_browser.Item2?.CloseAsync()!;
-                return a_href;
+                    await page_browser.Item1.CloseAsync();
+                    if (page_browser.Item2 != null)
+                        await page_browser.Item2?.CloseAsync()!;
+                    return a_href;
+                }
+                throw new ContentException("GetHrefFromPage");
             }
             catch (Exception ex)
             {
@@ -403,16 +582,22 @@ namespace InstagramPars.Services
         {
             try
             {
-                var page_broser = await Prepare();
-                await page_broser.Item1!.GoToAsync(url);
+                var page_browser = await Prepare();
+                //                await page_broser.Item1!.GoToAsync(url);
 
-                await page_broser.Item1.WaitForSelectorAsync(".x5yr21d");//, ".xu96u03", ".x10l6tqk", ".x13vifvy", ".x87ps6o", ".xh8yej3");
-                string result = await page_broser.Item1.GetContentAsync();
-                await this.SaveCookies(page_broser.Item1);
-                await page_broser.Item1.CloseAsync();
-                if (page_broser.Item2 != null)
-                    await page_broser.Item2.CloseAsync();
-                return result;
+                if (page_browser.Item1 != null)
+                {
+                    await page_browser.Item1?.GoToAsync(url, new NavigationOptions { WaitUntil = new[] { WaitUntilNavigation.Networkidle2 } })!;
+
+                    await page_browser.Item1.WaitForSelectorAsync(".x5yr21d");//, ".xu96u03", ".x10l6tqk", ".x13vifvy", ".x87ps6o", ".xh8yej3");
+                    string result = await page_browser.Item1.GetContentAsync();
+                    await this.SaveCookies(page_browser.Item1);
+                    await page_browser.Item1.CloseAsync();
+                    if (page_browser.Item2 != null)
+                        await page_browser.Item2.CloseAsync();
+                    return result;
+                }
+                throw new ContentException("GetHtmlFromPage");
             }
             catch (Exception ex)
             {
