@@ -194,11 +194,12 @@ namespace InstagramPars.Services
                 return $"Check exception: {ex.Message}";
             }
         }
-        public async Task<Dictionary<string, string>> GetResponseData(string url)
+        public async Task<List<Tuple<string, string>>> GetResponseData(string url)
         {
             IBrowser? browser = null;
             IPage? page = null;
-            Dictionary<string, string> data = new();
+            List<Tuple<string, string>> data = new(); 
+//            Dictionary<string, string> data = new();
             try
             {
                 browser = await Puppeteer.LaunchAsync(await InitDownloadOptions());
@@ -214,7 +215,8 @@ namespace InstagramPars.Services
                         var responseText = await e.Response.TextAsync();
                         if (responseText != null)
                         {
-                            data.Add(url, await e.Response.TextAsync());
+                            data.Add(new Tuple<string, string>(url, await e.Response.TextAsync()));
+                            //data.Add(url, await e.Response.TextAsync());
                         }
                     } catch(Exception ex) { Console.WriteLine($"ex {ex.Message}"); }
                 };
@@ -440,10 +442,10 @@ namespace InstagramPars.Services
 
         }
 
-        public async Task<Dictionary<string, string>> GetResponseInstagramData(string url)
+        public async Task<List<Tuple<string, string>>> GetResponseInstagramData(string url)
         {
             (IPage?, IBrowser?) page_browser;
-            Dictionary<string, string> data = new Dictionary<string, string>();
+            List<Tuple<string, string>> data = new();
             try
             {
                 page_browser = await Prepare();
@@ -462,7 +464,8 @@ namespace InstagramPars.Services
                             var responseText = await e.Response.TextAsync();
                             if (responseText != null)
                             {
-                                data.Add(url, await e.Response.TextAsync());
+                                data.Add(new Tuple<string, string>(url, await e.Response.TextAsync()));
+                                //                                data.Add(url, await e.Response.TextAsync());
                             }
                             if (url == "http://localhost:5235/api/Test/GetAjax?test=load")
                             {
