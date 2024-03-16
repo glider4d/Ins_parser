@@ -126,6 +126,7 @@ namespace InstagramParser.Controllers
             return NotFound();
         }
 
+        [HttpGet(nameof(GetInstagramImage))]
         public async Task<IActionResult> GetInstagramImage(string url, string referer)
         {
             var result = await _parser.GetImgInstagramFromUrl(url, referer);
