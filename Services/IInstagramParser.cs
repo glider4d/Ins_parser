@@ -26,7 +26,8 @@ namespace InstagramPars.Services
         void Bash(string cmd);
 
         Task<LaunchOptions> InitDownloadOptions();
-
+        Task<(byte[], string)> GetImgInstagramFromUrl(string url, string referer);
+        Task<(byte[], string)> GetImgFromUrl(string url, string referer);
         Task<string> Check();
         Task<string> GetHtmlFromUrl(string url);
         Task<string> GetHtmlFromUrlWithWaitTag(string url, string waitTag);

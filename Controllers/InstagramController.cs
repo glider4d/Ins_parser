@@ -3,6 +3,7 @@ using InstagramPars.Services;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using PuppeteerSharp;
+using System;
 
 
 
@@ -110,6 +111,29 @@ namespace InstagramParser.Controllers
         public async Task<IActionResult> GetResponseData(string url) => Ok(await _parser.GetResponseData(url));
         [HttpGet(nameof(GetResponseInstagramData))]
         public async Task<IActionResult> GetResponseInstagramData(string url) => Ok(await _parser.GetResponseInstagramData(url));
+
+
+        [HttpGet(nameof(GetImage))]
+        public async Task<IActionResult> GetImage(string url, string referer)
+        {
+
+
+            var result = await _parser.GetImgFromUrl(url, referer);
+
+            if (result.Item1.Length > 0)
+                return File(result.Item1, result.Item2);
+            
+            return NotFound();
+        }
+
+        public async Task<IActionResult> GetInstagramImage(string url, string referer)
+        {
+            var result = await _parser.GetImgInstagramFromUrl(url, referer);
+            if (result.Item1.Length > 0) return File(result.Item1, result.Item2);
+            
+
+            return NotFound();
+        }
         /*{
             using var browserFetcher = new BrowserFetcher();
             await browserFetcher.DownloadAsync();            

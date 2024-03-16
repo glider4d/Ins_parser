@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Newtonsoft.Json;
 using PuppeteerSharp;
+using static System.Net.Mime.MediaTypeNames;
 
 
 namespace InstagramPars.Services
@@ -491,6 +492,7 @@ namespace InstagramPars.Services
 
                     await page_browser.Item1?.GoToAsync(url, new NavigationOptions { WaitUntil = new[] { WaitUntilNavigation.Networkidle2 } })!;
                     await page_browser.Item1.WaitForSelectorAsync(".x5yr21d");
+ 
                     await this.SaveCookies(page_browser.Item1);
                     await page_browser.Item1.CloseAsync();
                     if (page_browser.Item2 != null) {
@@ -508,6 +510,139 @@ namespace InstagramPars.Services
             catch (Exception ex)
             {
                 throw new ContentException("GetResponseData exception", ex);
+            }
+        }
+
+        public async Task<(byte[], string)> GetImgInstagramFromUrl(string url, string referer)
+        {
+            (IPage?, IBrowser?) page_browser;
+
+            try
+            {
+                (byte[], string) result = new();
+                page_browser = await Prepare();
+                if (page_browser.Item1 != null)
+                {
+
+
+                    var tcs = new TaskCompletionSource();
+                    page_browser.Item1.Response += async (sender, e) =>
+                    {
+                        string contentType = null;
+                        string[] imageMimeTypes = { "image/jpeg", "image/png", "image/webp", "image/gif" };
+
+                        string url = e.Response.Url;
+
+                        if (e.Response.Headers.ContainsKey("content-type"))
+                            contentType = (string)e.Response.Headers["content-type"].ToLower();
+
+                        if (e.Response.Headers.ContainsKey("Content-Type"))
+                            contentType = (string)e.Response.Headers["Content-Type"].ToLower();
+
+                        if (imageMimeTypes.Any(t => t == contentType))
+                        {
+
+
+                            try
+                            {
+
+                                result.Item1 = await e.Response.BufferAsync();
+                                result.Item2 = contentType ?? string.Empty;
+                            }
+                            catch (Exception ex) { Console.WriteLine($"Response Img from url{ex.Message}"); }
+                            tcs.TrySetResult();
+                        }
+                    };
+
+
+                    await page_browser.Item1.SetExtraHttpHeadersAsync(new Dictionary<string, string>
+                    {
+                        ["Referer"] = referer
+                    });
+
+                    await Task.WhenAll(page_browser.Item1.GoToAsync(url), tcs.Task);
+
+                    await page_browser.Item1.CloseAsync();
+                    if (page_browser.Item2 != null)
+                    {
+                        await page_browser.Item2.CloseAsync();
+                    }
+
+                    return result;
+                }
+
+                if (page_browser.Item2 != null)
+                    page_browser.Item2?.CloseAsync();
+                throw new ContentException("GetImgInstagramFromUrl exception");
+
+            }
+            catch (Exception ex)
+            {
+                throw new ContentException("GetImgInstagramFromUrl exception", ex);
+            }
+        }
+
+
+        public async Task<(byte[], string)> GetImgFromUrl(string url, string referer)
+        {
+
+
+            IBrowser? browser = null;
+            try
+            {
+                (byte[], string) result = new();
+                //                Image image = Image.FromFile(Path)
+                browser = await Puppeteer.LaunchAsync(await InitDownloadOptions());
+                var page = await browser.NewPageAsync();
+
+                var tcs = new TaskCompletionSource();
+                page.Response += async (sender, e) =>
+                {
+                    string contentType = null;
+                    string[] imageMimeTypes = { "image/jpeg", "image/png", "image/webp", "image/gif" };
+
+                    string url = e.Response.Url;
+
+                    if (e.Response.Headers.ContainsKey("content-type"))
+                        contentType = (string)e.Response.Headers["content-type"].ToLower();
+
+                    if (e.Response.Headers.ContainsKey("Content-Type"))
+                        contentType = (string)e.Response.Headers["Content-Type"].ToLower();
+
+                    if (imageMimeTypes.Any(t => t == contentType))
+                    {
+
+
+                        try
+                        {
+
+                            result.Item1 = await e.Response.BufferAsync();
+                            result.Item2 = contentType ?? string.Empty;
+                        }
+                        catch (Exception ex) { Console.WriteLine($"Response Img from url{ex.Message}"); }
+                        tcs.TrySetResult();
+                    }
+                };
+
+
+
+                await page.SetExtraHttpHeadersAsync(new Dictionary<string, string>
+                {
+                    ["Referer"] = referer
+                });
+
+                await Task.WhenAll(page.GoToAsync(url), tcs.Task);
+
+
+
+                await page.CloseAsync();
+                await browser.CloseAsync();
+                return result;
+            }
+            catch (Exception ex)
+            {
+                await browser?.CloseAsync()!;
+                throw new ContentException($"Check exception: {ex.Message}");
             }
         }
 
