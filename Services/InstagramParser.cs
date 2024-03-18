@@ -549,6 +549,9 @@ namespace InstagramPars.Services
                             {
 
                                 result.Item1 = await e.Response.BufferAsync();
+                                Console.WriteLine($"item2 = {result.Item2}");
+                                Console.WriteLine("");
+                                Console.WriteLine($"item1 = {result.Item1.Length}");
                                 result.Item2 = contentType ?? string.Empty;
                             }
                             catch (Exception ex) { Console.WriteLine($"Response Img from url{ex.Message}"); }
