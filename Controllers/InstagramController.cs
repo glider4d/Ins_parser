@@ -128,10 +128,17 @@ namespace InstagramParser.Controllers
         }
 
         [HttpGet(nameof(GetInstagramVideo))]
-        public async Task<IActionResult> GetInstagramVideo(string url, string referer)
+        public async Task<IActionResult> GetInstagramVideo(string url, string referer, string filename)
         {
             Console.WriteLine("GetInstagramVideo in");
-            var client = new HttpClient(); 
+
+
+            var client = new HttpClient();
+
+
+            client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
+            client.DefaultRequestHeaders.Add("Referer", referer);
+
             Stream stream2 = await client.GetStreamAsync(url);
 
 
@@ -141,7 +148,7 @@ namespace InstagramParser.Controllers
                 return NotFound(); // returns a NotFoundResult with Status404NotFound response.
             Console.WriteLine("GetInstagramVideo out");
 
-            return File(stream2, "application/octet-stream", "MapTest.mp4"); // returns a FileStreamResult
+            return File(stream2, "application/octet-stream", filename.Length==0? "insfile.mp4": filename); // returns a FileStreamResult
  
         }
 
