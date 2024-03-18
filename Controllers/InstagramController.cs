@@ -127,6 +127,7 @@ namespace InstagramParser.Controllers
             return NotFound();
         }
 
+        [HttpGet(nameof(GetInstagramVideo))]
         public async Task<IActionResult> GetInstagramVideo(string url, string referer)
         {
             Console.WriteLine("GetInstagramVideo in");
