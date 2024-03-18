@@ -539,6 +539,8 @@ namespace InstagramPars.Services
                         if (e.Response.Headers.ContainsKey("Content-Type"))
                             contentType = (string)e.Response.Headers["Content-Type"].ToLower();
 
+
+                        Console.WriteLine($"contentType = {contentType}");
                         if (imageMimeTypes.Any(t => t == contentType))
                         {
 
