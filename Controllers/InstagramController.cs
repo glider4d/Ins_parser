@@ -137,7 +137,17 @@ namespace InstagramParser.Controllers
 
 
             client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
+            
+
+
+            client.DefaultRequestHeaders.Add("authority", "scontent.cdninstagram.com");
+            client.DefaultRequestHeaders.Add("accept-language", " ru,en;q=0.9,en-GB;q=0.8,en-US;q=0.");
+            client.DefaultRequestHeaders.Add("origin", "https://www.instagram.com");
             client.DefaultRequestHeaders.Add("Referer", referer);
+            client.DefaultRequestHeaders.Add("'sec-fetch-dest", "empty");
+            client.DefaultRequestHeaders.Add("sec-fetch-mode", "cors");
+            // h.DefaultRequestHeaders.Add("Content-Type","application/json; charset=UTF-8");
+            client.DefaultRequestHeaders.Add("sec-fetch-site", "cross-site"); 
 
             Stream stream2 = await client.GetStreamAsync(url);
 
