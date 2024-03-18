@@ -547,8 +547,11 @@ namespace InstagramPars.Services
 
                             try
                             {
+                                var responseUrl = e.Response.Url;
+
 
                                 result.Item1 = await e.Response.BufferAsync();
+                                result.Item2 = responseUrl;
                                 Console.WriteLine($"item2 = {result.Item2}");
                                 Console.WriteLine("");
                                 Console.WriteLine($"item1 = {result.Item1.Length}");
