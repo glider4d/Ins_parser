@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using PuppeteerSharp;
 using System;
+using System.IO;
 
 
 
@@ -125,6 +126,24 @@ namespace InstagramParser.Controllers
             
             return NotFound();
         }
+
+        public async Task<IActionResult> GetInstagramVideo(string url, string referer)
+        {
+            Console.WriteLine("GetInstagramVideo in");
+            var client = new HttpClient(); 
+            Stream stream2 = await client.GetStreamAsync(url);
+
+
+
+
+            if (stream2 == null)
+                return NotFound(); // returns a NotFoundResult with Status404NotFound response.
+            Console.WriteLine("GetInstagramVideo out");
+
+            return File(stream2, "application/octet-stream", "MapTest.mp4"); // returns a FileStreamResult
+ 
+        }
+
 
         [HttpGet(nameof(GetInstagramImage))]
         public async Task<IActionResult> GetInstagramImage(string url, string referer)

@@ -529,7 +529,7 @@ namespace InstagramPars.Services
                     page_browser.Item1.Response += async (sender, e) =>
                     {
                         string contentType = null;
-                        string[] imageMimeTypes = { "image/jpeg", "image/png", "image/webp", "image/gif", "text/plain" };
+                        string[] imageMimeTypes = { "image/jpeg", "image/png", "image/webp", "image/gif", "video/mp4", "text/plain" };
 
                         string url = e.Response.Url;
 
